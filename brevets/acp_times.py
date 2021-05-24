@@ -4,74 +4,83 @@ for ACP-sanctioned brevets
 following rules described at https://rusa.org/octime_alg.html
 and https://rusa.org/pages/rulesForRiders
 """
+import sys
 import arrow
 
 
-#  You MUST provide the following two functions
-#  with these signatures. You must keep
-#  these signatures even if you don't use all the
-#  same arguments.
-#
-speedData = [[0, 15, 34], [200, 15, 32], [400, 15, 30], [600, 11.428, 28]]
-totalBrevetException = [[200, 810, 353], [300, 1200, 540], [400, 1620, 728], [600, 2400, 1128], [1000, 4500, 1985]]
+# Minimum times as [(from_dist, to_dist, speed),
+#                   (from_dist, to_dist, speed), ... ]
+min_speed = [(0, 200, 15), (200, 400, 15), (400, 600, 15),
+             (600, 1000, 11.428), (1000, 1300, 13.333)]
+max_speed = [(0, 200, 34), (200, 400, 32), (400, 600, 30),
+             (600, 1000, 28), (1000, 1300, 26)]
 
-def calculate(control_dist_km, brevet_dist_km, open):
-	timeDiff = 0
-	pastDistance = 0
-	index = 2 if open else 1
+# Final control times (at or exceeding brevet distance) are special cases
+final_close = {200: 13.5, 300: 20, 400: 27, 600: 40, 1000: 75}
+max_dist = 1300
 
-	if control_dist_km > brevet_dist_km * 1.2 or control_dist_km < 0:
-		return 0 
-
-	if control_dist_km >= brevet_dist_km:
-		for i in range(0, len(totalBrevetException)):
-			if brevet_dist_km == totalBrevetException[i][0]:
-				return totalBrevetException[i][index]
-
-	if not open and control_dist_km < 60:
-		return round((control_dist_km / 20 * 60) + 60)
-
-	for i in range(len(speedData)-1, -1, -1):
-		if control_dist_km > speedData[i][0]:
-			speed = speedData[i][index]
-			tempDist = control_dist_km - pastDistance - speedData[i][0]
-			pastDistance += tempDist
-			timeDiff += (tempDist / speed) * 60
-
-	return round(timeDiff)
 
 def open_time(control_dist_km, brevet_dist_km, brevet_start_time):
-	"""
-	Args:
-	   control_dist_km:  number, control distance in kilometers
-	   brevet_dist_km: number, nominal distance of the brevet
-		   in kilometers, which must be one of 200, 300, 400, 600,
-		   or 1000 (the only official ACP brevet distances)
-	   brevet_start_time:  A date object (arrow)
-	Returns:
-	   A date object indicating the control open time.
-	   This will be in the same time zone as the brevet start time.
-	"""
-	time = calculate(control_dist_km, brevet_dist_km, True)
-	brevet_start_time = brevet_start_time.shift(minutes=(time % 60))
-	brevet_start_time = brevet_start_time.shift(hours=(time // 60))
-	return brevet_start_time
+    """
+    Args:
+       control_dist_km:  number, the control distance in kilometers
+       brevet_dist_km: number, the nominal distance of the brevet
+       in kilometers, which must be one of 200, 300, 400, 600, or
+           1000 (the only official ACP brevet distances)
+       brevet_start_time:  An ISO 8601 format date-time string
+           indicating the official start time of the brevet
+    Returns:
+       An ISO 8601 format date string indicating the control open time.
+       This will be in the same time zone as the brevet start time.
+    """
+    if control_dist_km >= brevet_dist_km:
+        control_dist_km = brevet_dist_km
+    start_time = arrow.get(brevet_start_time)
+    elapsed_hours = 0
+    distance_left = control_dist_km
+    for from_dist, to_dist, speed in max_speed:
+        seg_length = to_dist - from_dist
+        if distance_left > seg_length:
+            elapsed_hours += seg_length / speed
+            distance_left -= seg_length
+        else:
+            elapsed_hours += distance_left / speed
+            open_time = start_time.shift(minutes=round(elapsed_hours*60))
+            return open_time
 
 
 def close_time(control_dist_km, brevet_dist_km, brevet_start_time):
-	"""
-	Args:
-	   control_dist_km:  number, control distance in kilometers
-		  brevet_dist_km: number, nominal distance of the brevet
-		  in kilometers, which must be one of 200, 300, 400, 600, or 1000
-		  (the only official ACP brevet distances)
-	   brevet_start_time:  A date object (arrow)
-	Returns:
-	   A date object indicating the control close time.
-	   This will be in the same time zone as the brevet start time.
-	"""
-	time = calculate(control_dist_km, brevet_dist_km, False)
+    """
+    Args:
+       control_dist_km:  number, the control distance in kilometers
+       brevet_dist_km: number, the nominal distance of the brevet
+           in kilometers, which must be one of 200, 300, 400, 600,
+           or 1000 (the only official ACP brevet distances)
+       brevet_start_time:  An ISO 8601 format date-time string indicating
+           the official start time of the brevet
+    Returns:
+       An ISO 8601 format date string indicating the control close time.
+       This will be in the same time zone as the brevet start time.
+    """
+    if control_dist_km == 0:
+        return brevet_start_time.shift(hours=1)
+    start_time = arrow.get(brevet_start_time)
+    if control_dist_km >= brevet_dist_km:
+        duration = final_close[brevet_dist_km]
+        finish_time = start_time.shift(hours=duration)
+        return finish_time
+    elapsed_hours = 0
+    distance_left = control_dist_km
+    for from_dist, to_dist, speed in min_speed:
+        seg_length = to_dist - from_dist
+        if distance_left > seg_length:
+            elapsed_hours += seg_length / speed
+            distance_left -= seg_length
+        else:
+            elapsed_hours += distance_left / speed
+            if control_dist_km < 60:
+                elapsed_hours += (60 - control_dist_km) / 60
+            cut_time = start_time.shift(minutes=round(elapsed_hours*60))
+            return cut_time
 
-	brevet_start_time = brevet_start_time.shift(minutes=(time % 60))
-	brevet_start_time = brevet_start_time.shift(hours=(time // 60))
-	return brevet_start_time
+    return arrow.now()

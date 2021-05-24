@@ -1,0 +1,16 @@
+version: '3'
+
+services:
+    web:
+        build: .
+        command: python -u flask_brevets.py
+        volumes:
+            - .:/app/
+        ports:
+            - "1234:5000"
+        depends_on:
+            - brevetsdb
+        environment:
+            MONGODB_HOSTNAME: brevetsdb
+    brevetsdb:
+        image: mongo:latest

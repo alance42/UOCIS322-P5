@@ -1,82 +1,34 @@
-# UOCIS322 - Project 5 #
-Brevet time calculator with AJAX and MongoDB!
+# UOCIS322 - Project 4 #
 
-## Overview
+Project: An ACP Brevet Randonneurs control brevets calculator implemented with Flask, Ajax, and MongoDB
 
-Store control times from Project 4 in a MongoDB database.
+Author: Avi Lance
 
-### What is in this repository
+Contact: alance@uoregon.edu
 
-You have a minimal example of `docker-compose` in `DockerMongo`, using which you can connect a Flask app to MongoDB (as demonstrated in class). Refer to the lecture slides for more details on MongoDB and `docker-compose`. Solved `acp_times.py` file will be made available on Canvas under Files after the project due date.
+# Database Interaction #
 
-## IMPORTANT NOTES
+When you click the "submit" button it will check to see if the entered data is appropiate, if it is it will enter your data into the database. If it is not appropiate, it will not interact with the database and display an error message.
 
-**MAKE SURE TO USE THE SOLUTION `acp_times.py` from Canvas for this project!**
+If you click the "display" button it will display the last submit's stored data assuming it was successful.
 
-**MAKE SURE TO KEEP YOUR FILES in `brevets`! REMOVE `DockerMongo` after you're done!**
+# Users #
 
-## Getting started
+If the Control Distance is greater than 120% of the Brevet Distance, it will return the given starting date with no change in the open and close time column.
 
-You will reuse *your* code from Project 4 (and the solution `acp_times.py` file for consistency), meaning you will get rid of `DockerMongo` (it's just an example, like `minijax` in Project 3), and use ideas from it to make some changes.
+If the Control Distance is greater than the Brevet Distance's i.e. (200, 300, 400, 600, 1000) and within 120% of the Brevet Distance, it will return the same starting and closing time you would have if you had a control distance equal to that competitions Brevet Distance.
 
-Recall that you created a list of open and close control times using AJAX. In this project, you will add the following:
+If the Control Distance is negative, it will return the given starting date with no change in the open and close time column.
 
-1. Add two buttons `Submit` and `Display` in the ACP calculator page.
+If the Control Distance is equal to 0, then the opening time will remain unchanged, while the closing time will be 1 hour past the starting time.
 
-2. Upon clicking the `Submit` button, the control times should be inserted into a MongoDB database.
+If the Control Distance is less than 60 and greater than 0, the closing time will use 20 km/hr with an additional hour added ontop of the calculation. 
 
-3. Upon clicking the `Display` button, the entries from the database should be displayed in a new page.
+If the Control Distance is equal to the Brevet Distance, the speed will be calculated based on the lower Control's speed.
 
-Handle error cases appropriately. For example, Submit should return an error if no control times are input. One can imagine many such cases: you'll come up with as many cases as possible.
+# Developers #
 
-## Tasks
+In order to run tests, execute run_tests.sh. If you would like to add tests place a new python file starting with the name "test" in the tests folder.
 
-As always you'll turn in your `credentials.ini` using Canvas, which will point to your repository on GitHub, which should contain:
+You can create a new credentials.ini from the credentials-skel.ini. This will allow you to manipulate the port and debug features used by flask_brevets.py.
 
-* `Dockerfile`
-
-* `docker-compose.yml`
-
-* The working application.
-
-* A README.md file that includes not only identifying information (your name) but but also a revised, clear specification of the brevet control time calculation rules (you were supposed to do this for Project 4), with additional information regarding this project.
-
-* An automated `nose` test suite with at least 2 test cases: at least one for the time calculator, and another for DB insertion and retrieval.
-
-## Grading Rubric
-
-* If your code works as expected: 100 points. This includes:
-	* Front-end implementation (`Submit` and `Display`).
-	
-	* Back-end implementation (Connecting to MongoDB, insertion and selection).
-	
-	* AJAX interaction between the frontend and backend (AJAX for `Submit` and `Display`).
-	
-	* Updating `README` with a clear specification (including details from Project 4).
-	
-	* Writing at least 2 correct tests using nose (put them in `tests`, follow Project 3 if necessary), and all should pass.
-
-* If the AJAX logic is not working, **10** points will be docked off. 
-
-* If the logic to insert into or retrieve from the database is wrong, **30** points will be docked off.
-
-* If the README is not clear or missing, up to **15** points will be docked off. 
-
-* If any of the two test cases are incorrect or fail, up to **15** points will be docked off. 
-
-* If none of the functionalities work, 30 points will be given assuming 
-    * The `credentials.ini` is submitted with the correct URL of your repo, and
-    * `Dockerfile` is present 
-    * `docker-compose.yml` works/builds without any errors 
-
-* If none of the functionalities work, 30 points will be given assuming `credentials.ini` is submitted with the correct URL of your repo, `Dockerfile` builds and runs without any errors, and `docker-compose.yml` is correct and works.
-
-* If `docker-compose.yml` is missing, doesn't build or doesn't run, 10 points will be docked off.
-    
-* If `Dockerfile` is missing, doesn't build or doesn't run, 10 points will be docked off.
-	
-* If `credentials.ini` is not submitted or the repo is not found, 0 will be assigned.
-
-## Credits
-
-Michal Young, Ram Durairajan, Steven Walton, Joe Istas.
